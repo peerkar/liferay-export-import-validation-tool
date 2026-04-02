@@ -1,4 +1,4 @@
-# Liferay Export/Import DB-Validation Script
+# Liferay Export/Import Validation Tool
 
 A modular Bash script for helping in validating Liferay export/import operations by comparing the database state of a source site against a target site. It runs SQL checks against both environments, diffs the results automatically, and produces a summary on screen with a full log written to file.
 
@@ -28,22 +28,22 @@ compare.sh                  Entry point and framework
 config/
   db.conf                   DB Credentials file
 tests/
-  assetlibraries.sh         Asset Libraries
-  blogs.sh                  Blogs
+  asset_library.sh         Asset Libraries
+  blog.sh                  Blogs
   calendar.sh               Calendar
-  categories.sh             Asset Categories and Vocabularies
-  collections.sh            Collections
-  documents.sh              Documents and Media
-  forms.sh                  Forms
-  fragments.sh              Fragments
-  friendlyurls.sh           Friendly URLs
-  navigationmenus.sh        Navigation Menus
-  pages.sh                  Pages
-  segments.sh               Segments and Experiences
-  stylebooks.sh             Style Books
-  tags.sh                   Tags
-  templates.sh              Templates
-  webcontent.sh             Web Content
+  category_vocabulary.sh             Asset Categories and Vocabularies
+  collection.sh            Collections
+  documents_and_media.sh              Documents and Media
+  form.sh                  Forms
+  fragment.sh              Fragments
+  friendly_url.sh           Friendly URLs
+  navigation_menu.sh        Navigation Menus
+  page.sh                  Pages
+  segment.sh               Segments and Experiences
+  style_book.sh             Style Books
+  tag.sh                   Tags
+  template.sh              Templates
+  web_content.sh             Web Content
   wiki.sh                   Wiki
 logs/
   compare_YYYYMMDD_HHMMSS.log   Generated per run (gitignored)
@@ -133,12 +133,12 @@ A summary is printed after all tests have run:
 
   [ WIKI ]
     ✓  WikiNode – Total count
-    ✓  WikiNode – UUIDs
+    ✓  WikiNode – Identifiers
     ✗  WikiPage – Content checksum for head pages
 
   [ SEGMENTS ]
     ✓  SegmentsEntry – Total count
-    ✓  SegmentsEntry – UUIDs
+    ✓  SegmentsEntry – Identifiers
     ✓  SegmentsEntry – Criteria checksum
 
   ✗ 1 of 7 checks failed.
@@ -170,12 +170,12 @@ Each test covers one entity type across all validation layers:
 | Layer | What is checked |
 |---|---|
 | Counts | Row counts per status, type, or category |
-| UUIDs | Stable UUID anchors per entity |
+| Identifiers | Stable  anchors per entity |
 | Names & descriptions | Human-readable fields |
 | Core fields | Type, status, key configuration fields |
 | Content integrity | MD5 checksums on large content fields |
 | Relationships | Associations, mappings, hierarchy |
-| Dates | `createDate`, `modifiedDate`, `lastPublishDate`, etc. |
+| Dates | `createDate`, `modifiedDate`, etc. |
 
 ---
 
