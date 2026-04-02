@@ -46,8 +46,8 @@ test_calendar() {
         SELECT
             uuid_,
             REGEXP_REPLACE(name,        '<[^>]+>', '') AS name_plain,
-            MD5(description)                           AS description_md5,
-            LENGTH(description)                        AS description_len
+            MD5(NULLIF(description, ''))                AS description_md5,
+            LENGTH(NULLIF(description, ''))             AS description_len
         FROM Calendar
         WHERE groupId = __GROUPID__
           AND ctCollectionId = 0
@@ -121,8 +121,8 @@ test_calendar() {
     check "CalendarResource – Description" "
         SELECT
             uuid_,
-            MD5(description)                           AS description_md5,
-            LENGTH(description)                        AS description_len
+            MD5(NULLIF(description, ''))                AS description_md5,
+            LENGTH(NULLIF(description, ''))             AS description_len
         FROM CalendarResource
         WHERE groupId = __GROUPID__
           AND ctCollectionId = 0
