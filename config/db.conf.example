@@ -1,0 +1,23 @@
+# =============================================================================
+# Export-Import Validation – DB Credentials
+# =============================================================================
+# Copy this file to db.conf and fill in your values.
+# db.conf is gitignored and must NEVER be committed.
+#
+# Both source and target can point to the same DB host/instance
+# if you are comparing two sites within the same Liferay environment.
+# =============================================================================
+
+# -- Source environment -------------------------------------------------------
+SRC_DB_HOST=localhost
+SRC_DB_PORT=3306
+SRC_DB_NAME=lportal
+SRC_DB_USER=
+SRC_DB_PASS=
+
+# -- Target environment -------------------------------------------------------
+TGT_DB_HOST=localhost
+TGT_DB_PORT=3306
+TGT_DB_NAME=lportal
+TGT_DB_USER=
+TGT_DB_PASS=
