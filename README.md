@@ -24,27 +24,27 @@ This was written for Liferay DXP 7.4 2026.Q1
 ## File structure
 
 ```
-compare.sh                  Entry point and framework
+compare.sh                 Main script
 config/
-  db.conf                   DB Credentials file
+  db.conf                  DB Credentials file
 tests/
   asset_library.sh         Asset Libraries
   blog.sh                  Blogs
-  calendar.sh               Calendar
-  category_vocabulary.sh             Asset Categories and Vocabularies
+  calendar.sh              Calendar
+  category_vocabulary.sh   Asset Categories and Vocabularies
   collection.sh            Collections
-  documents_and_media.sh              Documents and Media
+  documents_and_media.sh   Documents and Media
   form.sh                  Forms
   fragment.sh              Fragments
-  friendly_url.sh           Friendly URLs
-  navigation_menu.sh        Navigation Menus
+  friendly_url.sh          Friendly URLs
+  navigation_menu.sh       Navigation Menus
   page.sh                  Pages
   segment.sh               Segments and Experiences
-  style_book.sh             Style Books
+  style_book.sh            Style Books
   tag.sh                   Tags
   template.sh              Templates
-  web_content.sh             Web Content
-  wiki.sh                   Wiki
+  web_content.sh           Web Content
+  wiki.sh                  Wiki
 logs/
   compare_YYYYMMDD_HHMMSS.log   Generated per run (gitignored)
 ```
