@@ -103,10 +103,24 @@ test_calendar() {
         ORDER BY cr.uuid_;
     "
 
-    check "CalendarResource – Name and description" "
+    check "CalendarResource – Name matches site name" "
+        SELECT
+            cr.uuid_,
+            CASE
+                WHEN cr.name = g.name THEN 'YES'
+                ELSE 'NO'
+            END                                        AS name_matches_site
+        FROM CalendarResource cr
+        JOIN Group_ g
+          ON g.groupId = cr.groupId
+        WHERE cr.groupId = __GROUPID__
+          AND cr.ctCollectionId = 0
+        ORDER BY cr.uuid_;
+    "
+
+    check "CalendarResource – Description" "
         SELECT
             uuid_,
-            REGEXP_REPLACE(name,        '<[^>]+>', '') AS name_plain,
             MD5(description)                           AS description_md5,
             LENGTH(description)                        AS description_len
         FROM CalendarResource
