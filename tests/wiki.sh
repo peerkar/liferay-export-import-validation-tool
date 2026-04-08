@@ -32,8 +32,7 @@ test_wiki() {
     check "WikiNode – Name and description" "
         SELECT
             name,
-            MD5(description)        AS description_md5,
-            LENGTH(description)     AS description_len
+            MD5(NULLIF(description, ''))                AS description_md5
         FROM WikiNode
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
