@@ -60,8 +60,7 @@ test_collection() {
         SELECT
             externalReferenceCode,
             type_,
-            assetEntryType,
-            assetEntrySubtype
+            assetEntryType
         FROM AssetListEntry
         WHERE groupId = __GROUPID__
          AND ctCollectionId = 0

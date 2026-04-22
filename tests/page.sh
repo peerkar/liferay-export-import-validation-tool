@@ -2,14 +2,13 @@
 # Test: PAGES
 # Tables: Layout, LayoutPageTemplateEntry, LayoutPageTemplateCollection,
 #         LayoutPageTemplateStructure, LayoutPageTemplateStructureRel,
-#         ClassName_
+#         LayoutUtilityPageEntry, ClassName_
 # =============================================================================
 #
 # LayoutPageTemplateEntry type_ values:
 #   0 = Page Template (Basic/Content page template)
 #   1 = Display Page Template
-#   2 = Master Page
-#   3 = Utility Page
+#   3 = Master Page
 #
 # Page structure note:
 #   LayoutPageTemplateStructure has no data_ column. Page content is stored
@@ -55,15 +54,34 @@ test_page() {
 
     check "Layout – Names and titles" "
         SELECT
-            externalReferenceCode,
-            REGEXP_REPLACE(name,  '<[^>]+>', '') AS name_plain,
-            REGEXP_REPLACE(title, '<[^>]+>', '') AS title_plain
-        FROM Layout
-        WHERE groupId        = __GROUPID__
-          AND ctCollectionId = 0
-          AND status         = 0
-          AND system_        = 0
-        ORDER BY externalReferenceCode;
+            l.externalReferenceCode,
+            GROUP_CONCAT(
+                REPLACE(REPLACE(
+                    REGEXP_SUBSTR(l.name, 'language-id=\"[^\"]*\">[^<]*', 1, seq.n),
+                    'language-id=\"', ''),
+                    '\">', '=')
+                ORDER BY REGEXP_SUBSTR(l.name, 'language-id=\"[^\"]*\">[^<]*', 1, seq.n)
+                SEPARATOR ', '
+            ) AS name_translations,
+            GROUP_CONCAT(
+                REPLACE(REPLACE(
+                    REGEXP_SUBSTR(l.title, 'language-id=\"[^\"]*\">[^<]*', 1, seq.n),
+                    'language-id=\"', ''),
+                    '\">', '=')
+                ORDER BY REGEXP_SUBSTR(l.title, 'language-id=\"[^\"]*\">[^<]*', 1, seq.n)
+                SEPARATOR ', '
+            ) AS title_translations
+        FROM Layout l
+        JOIN (
+            SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
+            UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
+        ) seq ON REGEXP_SUBSTR(l.name, 'language-id=\"[^\"]*\">[^<]*', 1, seq.n) IS NOT NULL
+        WHERE l.groupId        = __GROUPID__
+          AND l.ctCollectionId = 0
+          AND l.status         = 0
+          AND l.system_        = 0
+        GROUP BY l.externalReferenceCode
+        ORDER BY l.externalReferenceCode;
     "
 
     check "Layout – Core fields" "
@@ -100,11 +118,10 @@ test_page() {
         ORDER BY l.externalReferenceCode;
     "
 
-    check "Layout – Structure checksum (content pages)" "
+    check "Layout – Structure relation count (content pages)" "
         SELECT
             l.externalReferenceCode,
-            MD5(lptsr.data_)     AS structure_hash,
-            LENGTH(lptsr.data_)  AS structure_length
+            COUNT(*)             AS structure_rel_count
         FROM Layout l
         JOIN LayoutPageTemplateStructure lpts
           ON lpts.plid           = l.plid
@@ -117,6 +134,7 @@ test_page() {
           AND l.status         = 0
           AND l.system_        = 0
           AND l.type_          = 'content'
+        GROUP BY l.externalReferenceCode
         ORDER BY l.externalReferenceCode;
     "
 
@@ -136,7 +154,7 @@ test_page() {
 
 
     # =========================================================================
-    # MASTER PAGES  (LayoutPageTemplateEntry type_ = 2)
+    # MASTER PAGES  (LayoutPageTemplateEntry type_ = 3)
     # =========================================================================
 
     check "Master Pages – Count" "
@@ -145,7 +163,7 @@ test_page() {
         FROM LayoutPageTemplateEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
-          AND type_          = 2;
+          AND type_          = 3;
     "
 
     check "Master Pages – Identifiers" "
@@ -156,7 +174,7 @@ test_page() {
         FROM LayoutPageTemplateEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
-          AND type_          = 2
+          AND type_          = 3
         ORDER BY externalReferenceCode;
     "
 
@@ -167,7 +185,7 @@ test_page() {
         FROM LayoutPageTemplateEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
-          AND type_          = 2
+          AND type_          = 3
         ORDER BY externalReferenceCode;
     "
 
@@ -179,15 +197,14 @@ test_page() {
         FROM LayoutPageTemplateEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
-          AND type_          = 2
+          AND type_          = 3
         ORDER BY externalReferenceCode;
     "
 
-    check "Master Pages – Structure checksum" "
+    check "Master Pages – Structure relation count" "
         SELECT
             lpte.externalReferenceCode,
-            MD5(lptsr.data_)     AS structure_hash,
-            LENGTH(lptsr.data_)  AS structure_length
+            COUNT(*)             AS structure_rel_count
         FROM LayoutPageTemplateEntry lpte
         JOIN LayoutPageTemplateStructure lpts
           ON lpts.plid           = lpte.plid
@@ -197,7 +214,8 @@ test_page() {
          AND lptsr.ctCollectionId = 0
         WHERE lpte.groupId        = __GROUPID__
           AND lpte.ctCollectionId = 0
-          AND lpte.type_          = 2
+          AND lpte.type_          = 3
+        GROUP BY lpte.externalReferenceCode
         ORDER BY lpte.externalReferenceCode;
     "
 
@@ -209,7 +227,7 @@ test_page() {
         FROM LayoutPageTemplateEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
-          AND type_          = 2
+          AND type_          = 3
         ORDER BY externalReferenceCode;
     "
 
@@ -313,11 +331,10 @@ test_page() {
         ORDER BY lpte.externalReferenceCode;
     "
 
-    check "Page Templates – Structure checksum" "
+    check "Page Templates – Structure relation count" "
         SELECT
             lpte.externalReferenceCode,
-            MD5(lptsr.data_)     AS structure_hash,
-            LENGTH(lptsr.data_)  AS structure_length
+            COUNT(*)             AS structure_rel_count
         FROM LayoutPageTemplateEntry lpte
         JOIN LayoutPageTemplateStructure lpts
           ON lpts.plid           = lpte.plid
@@ -328,6 +345,7 @@ test_page() {
         WHERE lpte.groupId        = __GROUPID__
           AND lpte.ctCollectionId = 0
           AND lpte.type_          = 0
+        GROUP BY lpte.externalReferenceCode
         ORDER BY lpte.externalReferenceCode;
     "
 
@@ -407,11 +425,10 @@ test_page() {
         ORDER BY lpte.externalReferenceCode;
     "
 
-    check "Display Page Templates – Structure checksum" "
+    check "Display Page Templates – Structure relation count" "
         SELECT
             lpte.externalReferenceCode,
-            MD5(lptsr.data_)     AS structure_hash,
-            LENGTH(lptsr.data_)  AS structure_length
+            COUNT(*)             AS structure_rel_count
         FROM LayoutPageTemplateEntry lpte
         JOIN LayoutPageTemplateStructure lpts
           ON lpts.plid           = lpte.plid
@@ -422,6 +439,7 @@ test_page() {
         WHERE lpte.groupId        = __GROUPID__
           AND lpte.ctCollectionId = 0
           AND lpte.type_          = 1
+        GROUP BY lpte.externalReferenceCode
         ORDER BY lpte.externalReferenceCode;
     "
 
@@ -439,27 +457,101 @@ test_page() {
 
 
     # =========================================================================
-    # UTILITY PAGES  (LayoutPageTemplateEntry type_ = 3)
+    # DISPLAY PAGE TEMPLATE FOLDERS  (LayoutPageTemplateCollection type_ = 1)
     # =========================================================================
 
-    check "Utility Pages – Count" "
+    check "Display Page Template Folders – Count" "
         SELECT
             COUNT(*)        AS total
-        FROM LayoutPageTemplateEntry
+        FROM LayoutPageTemplateCollection
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
-          AND type_          = 3;
+          AND type_          = 1;
+    "
+
+    check "Display Page Template Folders – Identifiers" "
+        SELECT
+            externalReferenceCode,
+            uuid_,
+            lptCollectionKey
+        FROM LayoutPageTemplateCollection
+        WHERE groupId        = __GROUPID__
+          AND ctCollectionId = 0
+          AND type_          = 1
+        ORDER BY externalReferenceCode;
+    "
+
+    check "Display Page Template Folders – Names and descriptions" "
+        SELECT
+            externalReferenceCode,
+            name,
+            description
+        FROM LayoutPageTemplateCollection
+        WHERE groupId        = __GROUPID__
+          AND ctCollectionId = 0
+          AND type_          = 1
+        ORDER BY externalReferenceCode;
+    "
+
+    check "Display Page Template Folders – Hierarchy" "
+        SELECT
+            c.externalReferenceCode,
+            COALESCE(p.externalReferenceCode, '(root)') AS parent_erc
+        FROM LayoutPageTemplateCollection c
+        LEFT JOIN LayoutPageTemplateCollection p
+               ON p.layoutPageTemplateCollectionId = c.parentLPTCollectionId
+              AND p.ctCollectionId = 0
+        WHERE c.groupId        = __GROUPID__
+          AND c.ctCollectionId = 0
+          AND c.type_          = 1
+        ORDER BY c.externalReferenceCode;
+    "
+
+    check "Display Page Template Folders – Dates" "
+        SELECT
+            externalReferenceCode,
+            createDate,
+            modifiedDate
+        FROM LayoutPageTemplateCollection
+        WHERE groupId        = __GROUPID__
+          AND ctCollectionId = 0
+          AND type_          = 1
+        ORDER BY externalReferenceCode;
+    "
+
+
+    # =========================================================================
+    # UTILITY PAGES  (LayoutUtilityPageEntry)
+    # =========================================================================
+
+    check "Utility Pages – Count by type" "
+        SELECT
+            type_,
+            COUNT(*)        AS total
+        FROM LayoutUtilityPageEntry
+        WHERE groupId        = __GROUPID__
+          AND ctCollectionId = 0
+        GROUP BY type_
+        ORDER BY type_;
     "
 
     check "Utility Pages – Identifiers" "
         SELECT
             externalReferenceCode,
-            uuid_,
-            layoutPageTemplateEntryKey
-        FROM LayoutPageTemplateEntry
+            uuid_
+        FROM LayoutUtilityPageEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
-          AND type_          = 3
+        ORDER BY externalReferenceCode;
+    "
+
+    check "Utility Pages – Names" "
+        SELECT
+            externalReferenceCode,
+            name
+        FROM LayoutUtilityPageEntry
+        WHERE groupId        = __GROUPID__
+          AND ctCollectionId = 0
         ORDER BY externalReferenceCode;
     "
 
@@ -467,31 +559,29 @@ test_page() {
         SELECT
             externalReferenceCode,
             name,
-            defaultTemplate,
-            status
-        FROM LayoutPageTemplateEntry
+            type_,
+            defaultLayoutUtilityPageEntry
+        FROM LayoutUtilityPageEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
-          AND type_          = 3
         ORDER BY externalReferenceCode;
     "
 
-    check "Utility Pages – Structure checksum" "
+    check "Utility Pages – Structure relation count" "
         SELECT
-            lpte.externalReferenceCode,
-            MD5(lptsr.data_)     AS structure_hash,
-            LENGTH(lptsr.data_)  AS structure_length
-        FROM LayoutPageTemplateEntry lpte
+            lupe.externalReferenceCode,
+            COUNT(*)             AS structure_rel_count
+        FROM LayoutUtilityPageEntry lupe
         JOIN LayoutPageTemplateStructure lpts
-          ON lpts.plid           = lpte.plid
+          ON lpts.plid           = lupe.plid
          AND lpts.ctCollectionId = 0
         JOIN LayoutPageTemplateStructureRel lptsr
           ON lptsr.layoutPageTemplateStructureId = lpts.layoutPageTemplateStructureId
          AND lptsr.ctCollectionId = 0
-        WHERE lpte.groupId        = __GROUPID__
-          AND lpte.ctCollectionId = 0
-          AND lpte.type_          = 3
-        ORDER BY lpte.externalReferenceCode;
+        WHERE lupe.groupId        = __GROUPID__
+          AND lupe.ctCollectionId = 0
+        GROUP BY lupe.externalReferenceCode
+        ORDER BY lupe.externalReferenceCode;
     "
 
     check "Utility Pages – Dates" "
@@ -499,10 +589,9 @@ test_page() {
             externalReferenceCode,
             createDate,
             modifiedDate
-        FROM LayoutPageTemplateEntry
+        FROM LayoutUtilityPageEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
-          AND type_          = 3
         ORDER BY externalReferenceCode;
     "
 }

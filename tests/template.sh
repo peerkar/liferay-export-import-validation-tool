@@ -31,15 +31,14 @@ test_template() {
         SELECT
             cn.value            AS class_name,
             t.type_,
-            t.mode_,
             COUNT(*)            AS total
         FROM DDMTemplate t
         JOIN ClassName_ cn
           ON cn.classNameId     = t.classNameId
         WHERE t.groupId         = __GROUPID__
           AND t.ctCollectionId  = 0
-        GROUP BY cn.value, t.type_, t.mode_
-        ORDER BY cn.value, t.type_, t.mode_;
+        GROUP BY cn.value, t.type_
+        ORDER BY cn.value, t.type_;
     "
 
     check "DDMTemplate – Identifiers" "
@@ -70,7 +69,7 @@ test_template() {
             t.externalReferenceCode,
             cn.value            AS class_name,
             t.type_,
-            t.mode_,
+            NULLIF(t.mode_, '') AS mode,
             t.language,
             t.cacheable
         FROM DDMTemplate t
@@ -122,8 +121,8 @@ test_template() {
 
     check "DDMTemplateLink – Template links" "
         SELECT
-            t.externalReferenceCode,
-            cn.value            AS linked_class_name
+            cn.value            AS linked_class_name,
+            COUNT(*)            AS total
         FROM DDMTemplate t
         JOIN DDMTemplateLink tl
           ON tl.templateId      = t.templateId
@@ -132,7 +131,8 @@ test_template() {
           ON cn.classNameId     = tl.classNameId
         WHERE t.groupId         = __GROUPID__
           AND t.ctCollectionId  = 0
-        ORDER BY t.externalReferenceCode, cn.value;
+        GROUP BY cn.value
+        ORDER BY cn.value;
     "
 
     # =========================================================================

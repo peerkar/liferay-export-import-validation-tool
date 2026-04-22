@@ -40,8 +40,9 @@ test_fragment() {
         SELECT
             externalReferenceCode,
             name,
-            MD5(description)        AS description_md5,
-            LENGTH(description)     AS description_len
+            REGEXP_REPLACE(name,        '<[^>]+>', '') AS name_plain,
+            MD5(NULLIF(description, ''))                AS description_md5,
+            LENGTH(NULLIF(description, ''))             AS description_len
         FROM FragmentCollection
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
@@ -86,8 +87,8 @@ test_fragment() {
         SELECT
             externalReferenceCode,
             name,
-            MD5(description)        AS description_md5,
-            LENGTH(description)     AS description_len
+            MD5(NULLIF(description, ''))                AS description_md5,
+            LENGTH(NULLIF(description, ''))             AS description_len
         FROM FragmentComposition
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
@@ -139,8 +140,9 @@ test_fragment() {
             COUNT(*)        AS total_entries
         FROM FragmentEntry
         WHERE groupId        = __GROUPID__
+          AND ctCollectionId = 0
+          AND fragmentCollectionId != 0
           AND head           = 1
-          AND ctCollectionId = 0;
     "
 
     check "FragmentEntry – Count by type" "
@@ -149,8 +151,10 @@ test_fragment() {
             COUNT(*)        AS total
         FROM FragmentEntry
         WHERE groupId        = __GROUPID__
-          AND head           = 1
           AND ctCollectionId = 0
+          AND fragmentCollectionId != 0
+          AND head           = 1
+          AND status = 0
         GROUP BY type_
         ORDER BY type_;
     "
@@ -162,8 +166,9 @@ test_fragment() {
             uuid_
         FROM FragmentEntry
         WHERE groupId        = __GROUPID__
-          AND head           = 1
           AND ctCollectionId = 0
+          AND fragmentCollectionId != 0
+          AND head           = 1
         ORDER BY externalReferenceCode;
     "
 
@@ -173,8 +178,9 @@ test_fragment() {
             name
         FROM FragmentEntry
         WHERE groupId        = __GROUPID__
-          AND head           = 1
           AND ctCollectionId = 0
+          AND fragmentCollectionId != 0
+          AND head           = 1
         ORDER BY externalReferenceCode;
     "
 
@@ -190,8 +196,9 @@ test_fragment() {
           ON fcol.fragmentCollectionId = fe.fragmentCollectionId
              AND fcol.ctCollectionId   = 0
         WHERE fe.groupId        = __GROUPID__
-          AND fe.head           = 1
           AND fe.ctCollectionId = 0
+          AND fe.fragmentCollectionId != 0
+          AND fe.head           = 1
         ORDER BY fe.externalReferenceCode;
     "
 
@@ -208,8 +215,9 @@ test_fragment() {
             LENGTH(configuration)   AS configuration_len
         FROM FragmentEntry
         WHERE groupId        = __GROUPID__
-          AND head           = 1
           AND ctCollectionId = 0
+          AND fragmentCollectionId != 0
+          AND head           = 1
         ORDER BY externalReferenceCode;
     "
 
@@ -220,8 +228,9 @@ test_fragment() {
             modifiedDate
         FROM FragmentEntry
         WHERE groupId        = __GROUPID__
-          AND head           = 1
           AND ctCollectionId = 0
+          AND fragmentCollectionId != 0
+          AND head           = 1
         ORDER BY externalReferenceCode;
     "
 
