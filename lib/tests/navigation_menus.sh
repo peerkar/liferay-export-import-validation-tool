@@ -10,8 +10,8 @@
 #   3 = Social navigation
 # =============================================================================
 
-test_navigation_menu() {
-    section "NAVIGATION MENU"
+test_navigation_menus() {
+    section "NAVIGATION MENUS"
 
     # =========================================================================
     # SiteNavigationMenu

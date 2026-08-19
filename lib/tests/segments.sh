@@ -4,8 +4,8 @@
 #         SegmentsExperience
 # =============================================================================
 
-test_segment() {
-    section "SEGMENT"
+test_segments() {
+    section "SEGMENTS"
 
     # =========================================================================
     # SegmentsEntry
@@ -16,7 +16,8 @@ test_segment() {
             COUNT(*)            AS total
         FROM SegmentsEntry
         WHERE groupId = __GROUPID__
-            AND ctCollectionId = 0;
+            AND ctCollectionId = 0
+            $(date_filter modifiedDate);
     "
 
     check "SegmentsEntry – Count by active status" "
@@ -26,6 +27,7 @@ test_segment() {
         FROM SegmentsEntry
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         GROUP BY active_
         ORDER BY active_;
     "
@@ -37,6 +39,7 @@ test_segment() {
         FROM SegmentsEntry
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         GROUP BY source
         ORDER BY source;
     "
@@ -49,6 +52,7 @@ test_segment() {
         FROM SegmentsEntry
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -61,6 +65,7 @@ test_segment() {
         FROM SegmentsEntry
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -72,6 +77,7 @@ test_segment() {
         FROM SegmentsEntry
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -83,6 +89,7 @@ test_segment() {
         FROM SegmentsEntry
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -94,6 +101,7 @@ test_segment() {
         FROM SegmentsEntry
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -110,7 +118,8 @@ test_segment() {
              AND se.ctCollectionId = 0
         WHERE se.groupId = __GROUPID__
             AND sx.ctCollectionId = 0
-            AND sx.active_ = 1;
+            AND sx.active_ = 1
+            $(date_filter sx.modifiedDate);
     "
 
     check "SegmentsExperience – Identifiers" "
@@ -127,6 +136,7 @@ test_segment() {
              AND se.ctCollectionId = 0
         WHERE se.groupId = __GROUPID__
             AND sx.ctCollectionId = 0
+            $(date_filter sx.modifiedDate)
         ORDER BY se.segmentsEntryKey, sx.segmentsExperienceKey;
     "
 
@@ -140,6 +150,7 @@ test_segment() {
              AND se.ctCollectionId = 0
         WHERE se.groupId = __GROUPID__
             AND sx.ctCollectionId = 0
+            $(date_filter sx.modifiedDate)
         ORDER BY se.segmentsEntryKey, sx.segmentsExperienceKey;
     "
 
@@ -155,6 +166,7 @@ test_segment() {
              AND se.ctCollectionId = 0
         WHERE se.groupId = __GROUPID__
             AND sx.ctCollectionId = 0
+            $(date_filter sx.modifiedDate)
         ORDER BY se.segmentsEntryKey, sx.priority DESC;
     "
 
@@ -169,6 +181,7 @@ test_segment() {
              AND se.ctCollectionId = 0
         WHERE se.groupId = __GROUPID__
             AND sx.ctCollectionId = 0
+            $(date_filter sx.modifiedDate)
         ORDER BY se.segmentsEntryKey, sx.segmentsExperienceKey;
     "
 
@@ -183,6 +196,7 @@ test_segment() {
               AND sx.ctCollectionId = 0
         WHERE se.groupId = __GROUPID__
             AND se.ctCollectionId = 0
+            $(date_filter se.modifiedDate)
         GROUP BY se.segmentsEntryKey
         ORDER BY se.segmentsEntryKey;
     "
@@ -204,6 +218,7 @@ test_segment() {
                ON r.roleId = ser.roleId
         WHERE se.groupId = __GROUPID__
             AND se.ctCollectionId = 0
+            $(date_filter se.modifiedDate)
         GROUP BY se.segmentsEntryKey
         ORDER BY se.segmentsEntryKey;
     "
@@ -225,6 +240,7 @@ test_segment() {
                ON cn.classNameId = rel.classNameId
         WHERE se.groupId = __GROUPID__
             AND se.ctCollectionId = 0
+            $(date_filter se.modifiedDate)
         GROUP BY se.segmentsEntryKey, cn.value
         ORDER BY se.segmentsEntryKey, cn.value;
     "

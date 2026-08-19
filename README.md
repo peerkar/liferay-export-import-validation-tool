@@ -1,193 +1,126 @@
-# Liferay Export/Import Validation Tool
+# lfimex
 
-A modular Bash script for helping in validating Liferay export/import operations by comparing the database state of a source site against a target site. It runs SQL checks against both environments, diffs the results automatically, and produces a summary on screen with a full log written to file.
+CLI for automating Liferay site export/import end-to-end. Drives the source-site export, optional fresh target instance creation, global-dependency migration, layout import, and (optionally) DB-level validation against a configurable test suite.
 
----
-
-## How it works
-
-The script connects to two MySQL databases — source and target — resolves the provided company and site into concrete `companyId` and `groupId` values, then runs a series of SQL checks per entity type. Each check runs the same query against both sides, normalizes the output, and diffs the result. A summary of pass/fail per check is printed to the screen; full query output and diff details are written to a timestamped log file.
-
----
+Built for Liferay DXP 7.4 (2026.Q1+).
 
 ## Requirements
 
-This was written for Liferay DXP 7.4 2026.Q1
-
 - Bash 4+
-- `mysql` client in `PATH`
-- Network access to both source and target MySQL/MariaDB instances
-- Read-only DB credentials for both environments
-
----
-
-## File structure
-
-```
-compare.sh                 Main script
-config/
-  db.conf                  DB Credentials file
-tests/
-  asset_library.sh         Asset Libraries
-  blog.sh                  Blogs
-  calendar.sh              Calendar
-  category_vocabulary.sh   Asset Categories and Vocabularies
-  collection.sh            Collections
-  documents_and_media.sh   Documents and Media
-  form.sh                  Forms
-  fragment.sh              Fragments
-  friendly_url.sh          Friendly URLs
-  navigation_menu.sh       Navigation Menus
-  page.sh                  Pages
-  segment.sh               Segments and Experiences
-  style_book.sh            Style Books
-  tag.sh                   Tags
-  template.sh              Templates
-  web_content.sh           Web Content
-  wiki.sh                  Wiki
-logs/
-  compare_YYYYMMDD_HHMMSS.log   Generated per run (gitignored)
-```
-
----
+- `mysql` and `curl` on `PATH`
+- `blade` on `PATH` (only when `INSTANCE_MODE=create`)
+- Direct DB access (read/write) to the Liferay portal
+- A running Liferay instance you can reach over HTTP
 
 ## Setup
 
-1. Clone the repository.
-2. Copy the credentials template and fill in your values:
-   ```bash
-   cp config/db.conf.example config/db.conf
-   ```
-3. Edit `config/db.conf`:
-   ```bash
-   # Source environment
-   SRC_DB_HOST=localhost
-   SRC_DB_PORT=3306
-   SRC_DB_NAME=lportal
-   SRC_DB_USER=root
-   SRC_DB_PASS=
-
-   # Target environment
-   TGT_DB_HOST=localhost
-   TGT_DB_PORT=3306
-   TGT_DB_NAME=lportal
-   TGT_DB_USER=root
-   TGT_DB_PASS=
-   ```
-4. Make the script executable:
-   ```bash
-   chmod +x compare.sh
-   ```
-
----
+```bash
+git clone <repo> && cd lfimex
+cp config/config.sh.example config/config.sh
+$EDITOR config/config.sh              # fill in BUNDLES_DIR, creds, source site
+ln -s "$PWD/lfimex" ~/.local/bin/lfimex   # optional, makes the command global
+```
 
 ## Usage
 
-```
-bash compare.sh --source-company-web-id <webId> --source-site <site_key>
-                --target-company-web-id <webId> --target-site <site_key>
-                [--tests t1,t22,...] [--verbose]
+```bash
+lfimex [options]
 ```
 
-### Parameters
+Run `lfimex --help` for the full flag list and `lfimex --list-assets` for the asset catalog.
 
-| Parameter | Required | Description |
-|---|---|---|
-| `--source-company-web-id` | No | Source company `webId` from the `Company` table. Defaults to `liferay.com`. |
-| `--source-site` | Yes | Source site `groupKey` from the `Group_` table. |
-| `--target-company-web-id` | No | Target company `webId`. Defaults to `liferay.com`. |
-| `--target-site` | Yes | Target site `groupKey`. |
-| `--tests` | No | Comma-separated list of tests to run. Defaults to all discovered tests. |
-| `--verbose` | No | Write full query output to the log for passing checks as well as failing ones. |
-
-### Examples
+### Common runs
 
 ```bash
-# Compare two sites within the same Liferay instance
-./compare.sh --source-site guest --target-site new-site
+# Full pipeline: fresh instance, migrate globals, create site, import everything,
+# validate against the source DB.
+lfimex
 
-# Compare sites across two different tenants
-./compare.sh compare.sh --source-company-web-id tenant-a.com --source-site guest \
-                --target-company-web-id tenant-b.com --target-site guest
+# Single asset, throw away the target afterwards.
+lfimex --assets blogs --cleanup
 
-# Run specific tests only
-./compare.sh compare.sh --source-site guest --target-site guest \
-                --tests wiki,segments,webcontent
+# Just produce LARs from the source site — no instance, no import, no validate.
+# One LAR per asset (per-asset mode) or one LAR for everything (--batch-mode bundled).
+lfimex --assets all --export-only
+lfimex --assets documents_and_media --export-only
+lfimex --assets blogs,web_content --export-only --batch-mode bundled
 
-# Save a full audit log with no colors
-NO_COLOR=1 ./compare.sh compare.sh --source-site guest --target-site guest \
-                            --verbose > report.txt
+# Full export → import flow but skip the DB-level comparison.
+# Useful as a plain migration pipeline.
+lfimex --skip-validation
+
+# Reuse the source company (no fresh instance) — fastest, but everything happens
+# inside the source. Validation compares the source site to a freshly created
+# sibling site.
+lfimex --instance-mode reuse --cleanup
+
+# Date-range scoped export.
+lfimex --assets documents_and_media --filter date-range \
+       --from-date 2023-12-01 --to-date 2026-05-13
+
+# Drop one specific check known to be a false positive on this corpus.
+lfimex --assets documents_and_media \
+       --ignore-tests 'documents_and_media:DLFileEntryMetadata – Identifiers'
+
+# Push OSGi config files into the running portal before the run.
+lfimex --copy-osgi-configs
 ```
 
----
+### Subset selection
 
-## Output
+`--assets` and `--global-assets` accept `all`, exclusion (`all,-blogs`), or an explicit list.
 
-### Screen
-A summary is printed after all tests have run:
+```bash
+# All site assets except blogs and wiki.
+lfimex --assets 'all,-blogs,-wiki'
 
-```
-═════════════════════════════════════════════════════════════════
-  VALIDATION SUMMARY
-═════════════════════════════════════════════════════════════════
-
-  [ WIKI ]
-    ✓  WikiNode – Total count
-    ✓  WikiNode – Identifiers
-    ✗  WikiPage – Content checksum for head pages
-
-  [ SEGMENTS ]
-    ✓  SegmentsEntry – Total count
-    ✓  SegmentsEntry – Identifiers
-    ✓  SegmentsEntry – Criteria checksum
-
-  ✗ 1 of 7 checks failed.
+# Only migrate Custom Fields and Web Content at the Global level.
+lfimex --global-assets 'custom_fields,web_content'
 ```
 
-### Log file
-Full output is written to `logs/compare_YYYYMMDD_HHMMSS.log`. For failing checks the log contains:
-- Full source query result
-- Full target query result
-- Column headers followed by the diff
+## Configuration
 
----
+Everything is in `config/config.sh` (per-developer, gitignored). Override anything per-run with an env var:
 
-## SQL placeholders
+```bash
+SOURCE_GROUP_ID=10182 INSTANCE_MODE=reuse lfimex --assets blogs
+```
 
-Tests use two placeholders in SQL that `check()` substitutes automatically:
+Key variables:
 
-| Placeholder | Replaced with |
+| Variable | Purpose |
 |---|---|
-| `__GROUPID__` | Resolved `groupId` for the compared site |
-| `__COMPANYID__` | Resolved `companyId` for the compared company |
+| `BASE_URL`, `USERNAME`, `PASSWORD` | Source portal + admin credentials |
+| `SOURCE_COMPANY_WEB_ID`, `SOURCE_GROUP_ID`, `SOURCE_PLID` | Source site identity |
+| `SRC_DB_*`, `TGT_DB_*` | Source / target MySQL connection |
+| `BUNDLES_DIR` | Local Liferay bundle (used for log capture, OSGi configs) |
+| `ASSETS`, `GLOBAL_ASSETS`, `EXTRA_TESTS`, `IGNORE_TESTS` | Run defaults the CLI flags can override |
+| `INSTANCE_MODE`, `BATCH_MODE`, `CLEANUP_INSTANCE` | Pipeline shape |
 
----
+The supported asset catalog lives in `config/asset_catalog.sh` (checked into git) — that's the registry of `asset_register` and `global_register` calls. Edit it to add or comment out support for a portlet's data.
 
-## Modules
+## Results
 
-Each test covers one entity type across all validation layers:
+Each run writes to `results/<RUN_ID>/`:
 
-| Layer | What is checked |
-|---|---|
-| Counts | Row counts per status, type, or category |
-| Identifiers | Stable  anchors per entity |
-| Names & descriptions | Human-readable fields |
-| Core fields | Type, status, key configuration fields |
-| Content integrity | MD5 checksums on large content fields |
-| Relationships | Associations, mappings, hierarchy |
-| Dates | `createDate`, `modifiedDate`, etc. |
+- `*.lar` — exported LAR files
+- `summary.tsv` — per-step status + LOG counts (one row per step)
+- `*.bundle.log` — captured `ERROR`/`WARN` blocks from `liferay.<date>.log` during that step
+- `validate_*.compare.log` — full per-test diff output (only when validation runs)
 
----
+A formatted summary table is also printed to stdout at the end of every run, with a final `STATUS: PASS | WARN | FAIL` verdict.
 
-## Adding a new test
+## Adding a new validation test
 
-1. Create `tests/<name>.sh`.
-2. Define a function `test_<name>()` inside it.
-3. Use `section`, `check`, `warn` helpers — they are sourced automatically from `compare.sh`.
-4. Use `__GROUPID__` and `__COMPANYID__` as placeholders in SQL.
-5. Filter `ctCollectionId = 0` on every table to exclude Publications drafts.
+1. Create `lib/tests/<name>.sh` defining `test_<name>()`.
+2. Use the `check "<label>" "<sql>"` helper. Substitute `__GROUPID__` and `__COMPANYID__` in SQL — `compare.sh` resolves them per side.
+3. Always filter `ctCollectionId = 0` to exclude Publications drafts.
+4. Add `$(date_filter <column>)` after every `WHERE` clause so `--filter date-range` actually narrows the scope.
+5. Either:
+   - Register the test against an asset (catalog: 5th arg of `asset_register`), or
+   - Add the test name to `EXTRA_TESTS` for a site-wide pass.
 
-Example skeleton:
+Example:
 
 ```bash
 test_example() {
@@ -196,31 +129,26 @@ test_example() {
     check "ExampleTable – Total count" "
         SELECT COUNT(*) AS total
         FROM ExampleTable
-        WHERE groupId        = __GROUPID__
-          AND ctCollectionId = 0;
-    "
-
-    check "ExampleTable – Core fields" "
-        SELECT
-            exampleKey,
-            name,
-            status
-        FROM ExampleTable
-        WHERE groupId        = __GROUPID__
+        WHERE groupId = __GROUPID__
           AND ctCollectionId = 0
-        ORDER BY exampleKey;
+          $(date_filter modifiedDate);
     "
 }
 ```
 
-The test is auto-discovered on the next run — no registration needed.
+## Standalone DB comparison
 
----
+`lib/compare.sh` is the diff engine; `lfimex` invokes it as the validation step. You can also run it directly against two existing sites without going through the export/import pipeline:
+
+```bash
+lib/compare.sh --source-site guest --target-site imported-site-20260513
+```
+
+Full log lands in a `/tmp/lfimex-compare-*.log` file (or `LOG_FILE=/path/...` to override).
 
 ## Notes
 
-- **Partition-aware**: Queries filter on `groupId` which is typically the partition key in Liferay databases, so MySQL/MariaDB partition pruning applies automatically.
-- **NULL vs empty**: The diff engine normalizes `NULL` and empty string as equivalent, since Liferay can import empty values as `NULL`.
-- **Version numbers**: Version columns are intentionally excluded from comparisons — Liferay resets version numbers to `1` on import while preserving the actual content.
-- **Generated IDs**: No raw generated IDs (`*Id` columns) are compared across environments. All checks use stable natural keys (`uuid_`, `*Key`, `friendlyURL`, etc.) or resolve IDs to their natural key equivalents.
-- **Publications**: All queries filter `ctCollectionId = 0` to exclude rows belonging to unpublished Publications drafts.
+- Empty queries / `NULL` vs `""` are normalized as equivalent.
+- Generated IDs are never compared across environments — checks use `uuid_`, `externalReferenceCode`, or natural keys.
+- Version numbers are excluded (Liferay resets them to 1 on import).
+- `LIFERAY_LOG_IGNORE_REGEX` masks known Liferay log false positives during bundle-log capture.

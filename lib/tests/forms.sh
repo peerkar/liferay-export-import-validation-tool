@@ -5,8 +5,8 @@
 #         DDMFormInstanceReport, DDMStructure
 # =============================================================================
 
-test_form() {
-    section "FORM"
+test_forms() {
+    section "FORMS"
 
     # =========================================================================
     # DDMFormInstance

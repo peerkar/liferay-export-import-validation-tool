@@ -10,8 +10,8 @@
 #   2 = Section
 # =============================================================================
 
-test_fragment() {
-    section "FRAGMENT"
+test_fragments() {
+    section "FRAGMENTS"
 
     # =========================================================================
     # FragmentCollection

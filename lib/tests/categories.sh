@@ -3,8 +3,8 @@
 # Tables: AssetVocabulary, AssetCategory, ClassName_
 # =============================================================================
 
-test_category_vocabulary() {
-    section "ASSET CATEGORY & VOCABULARY"
+test_categories() {
+    section "CATEGORIES & VOCABULARIES"
 
     # =========================================================================
     # AssetVocabulary

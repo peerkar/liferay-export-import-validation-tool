@@ -5,8 +5,8 @@
 #         DDMStructure, DDMTemplate, ClassName_
 # =============================================================================
 
-test_asset_library() {
-    section "ASSET LIBRARY"
+test_asset_libraries() {
+    section "ASSET LIBRARIES"
 
     # =========================================================================
     # DepotEntry

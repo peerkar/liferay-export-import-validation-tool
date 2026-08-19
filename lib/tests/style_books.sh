@@ -3,8 +3,8 @@
 # Tables: StyleBookEntry, StyleBookEntryVersion, DLFileEntry (preview image)
 # =============================================================================
 
-test_style_book() {
-    section "STYLE BOOK"
+test_style_books() {
+    section "STYLE BOOKS"
 
     # =========================================================================
     # StyleBookEntry
@@ -16,7 +16,8 @@ test_style_book() {
         FROM StyleBookEntry
         WHERE groupId = __GROUPID__
           AND head = 1
-          AND ctCollectionId = 0;
+          AND ctCollectionId = 0
+          $(date_filter modifiedDate);
     "
 
     check "StyleBookEntry – Identifiers" "
@@ -29,6 +30,7 @@ test_style_book() {
         WHERE groupId = __GROUPID__
           AND head = 1
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY styleBookEntryKey;
     "
 
@@ -40,6 +42,7 @@ test_style_book() {
         WHERE groupId = __GROUPID__
           AND head = 1
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY styleBookEntryKey;
     "
 
@@ -52,6 +55,7 @@ test_style_book() {
         WHERE groupId = __GROUPID__
           AND head = 1
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY styleBookEntryKey;
     "
 
@@ -64,6 +68,7 @@ test_style_book() {
         WHERE groupId = __GROUPID__
           AND head = 1
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY styleBookEntryKey;
     "
 
@@ -79,6 +84,7 @@ test_style_book() {
         WHERE sbe.groupId = __GROUPID__
           AND sbe.head = 1
           AND sbe.ctCollectionId = 0
+          $(date_filter sbe.modifiedDate)
         ORDER BY sbe.styleBookEntryKey;
     "
 
@@ -91,6 +97,7 @@ test_style_book() {
         WHERE groupId = __GROUPID__
           AND head = 1
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY styleBookEntryKey;
     "
 
@@ -111,6 +118,7 @@ test_style_book() {
         WHERE sbe.groupId          = __GROUPID__
           AND sbe.head             = 1
           AND sbe.ctCollectionId   = 0
+          $(date_filter sbe.modifiedDate)
           AND sbev.version = (
               SELECT MAX(sbev2.version)
               FROM StyleBookEntryVersion sbev2
@@ -131,6 +139,7 @@ test_style_book() {
         WHERE sbe.groupId          = __GROUPID__
           AND sbe.head             = 1
           AND sbe.ctCollectionId   = 0
+          $(date_filter sbe.modifiedDate)
           AND sbev.version = (
               SELECT MAX(sbev2.version)
               FROM StyleBookEntryVersion sbev2
@@ -152,6 +161,7 @@ test_style_book() {
         WHERE sbe.groupId          = __GROUPID__
           AND sbe.head             = 1
           AND sbe.ctCollectionId   = 0
+          $(date_filter sbe.modifiedDate)
           AND sbev.version = (
               SELECT MAX(sbev2.version)
               FROM StyleBookEntryVersion sbev2

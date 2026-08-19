@@ -23,7 +23,8 @@ test_documents_and_media() {
             COUNT(*)        AS total_files
         FROM DLFileEntry
         WHERE groupId        = __GROUPID__
-          AND ctCollectionId = 0;
+          AND ctCollectionId = 0
+          $(date_filter modifiedDate);
     "
 
     check "DLFileEntry – Count by MIME type" "
@@ -33,6 +34,7 @@ test_documents_and_media() {
         FROM DLFileEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         GROUP BY mimeType
         ORDER BY mimeType;
     "
@@ -45,6 +47,7 @@ test_documents_and_media() {
         FROM DLFileEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -56,6 +59,7 @@ test_documents_and_media() {
         FROM DLFileEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -77,6 +81,7 @@ test_documents_and_media() {
               AND f.ctCollectionId    = 0
         WHERE fe.groupId        = __GROUPID__
           AND fe.ctCollectionId = 0
+          $(date_filter fe.modifiedDate)
         ORDER BY fe.externalReferenceCode;
     "
 
@@ -91,6 +96,7 @@ test_documents_and_media() {
          AND fv.ctCollectionId = 0
         WHERE fe.groupId        = __GROUPID__
           AND fe.ctCollectionId = 0
+          $(date_filter fe.modifiedDate)
         GROUP BY fe.externalReferenceCode, fe.fileName
         ORDER BY fe.externalReferenceCode;
     "
@@ -106,6 +112,7 @@ test_documents_and_media() {
         FROM DLFileEntry
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -121,7 +128,8 @@ test_documents_and_media() {
           ON fe.fileEntryId    = fem.fileEntryId
          AND fe.ctCollectionId = 0
         WHERE fe.groupId       = __GROUPID__
-          AND fem.ctCollectionId = 0;
+          AND fem.ctCollectionId = 0
+          $(date_filter fe.modifiedDate);
     "
 
     check "DLFileEntryMetadata – Count per file entry type" "
@@ -137,6 +145,7 @@ test_documents_and_media() {
               AND ft.ctCollectionId   = 0
         WHERE fe.groupId         = __GROUPID__
           AND fem.ctCollectionId = 0
+          $(date_filter fe.modifiedDate)
         GROUP BY file_entry_type
         ORDER BY file_entry_type;
     "
@@ -152,6 +161,7 @@ test_documents_and_media() {
          AND fe.ctCollectionId   = 0
         WHERE fe.groupId         = __GROUPID__
           AND fem.ctCollectionId = 0
+          $(date_filter fe.modifiedDate)
         ORDER BY fem.externalReferenceCode;
     "
 
@@ -179,6 +189,7 @@ test_documents_and_media() {
          AND dfa.ctCollectionId  = 0
         WHERE fe.groupId         = __GROUPID__
           AND fem.ctCollectionId = 0
+          $(date_filter fe.modifiedDate)
         GROUP BY fe.externalReferenceCode, ds.structureKey
         ORDER BY fe.externalReferenceCode, ds.structureKey;
     "
@@ -303,7 +314,8 @@ test_documents_and_media() {
           ON fe.fileEntryId    = fv.fileEntryId
          AND fe.ctCollectionId = 0
         WHERE fe.groupId        = __GROUPID__
-          AND fv.ctCollectionId = 0;
+          AND fv.ctCollectionId = 0
+          $(date_filter fe.modifiedDate);
     "
 
     check "DLFileVersion – Latest version core fields" "
@@ -352,6 +364,7 @@ test_documents_and_media() {
          AND fe.ctCollectionId = 0
         WHERE fe.groupId        = __GROUPID__
           AND fv.ctCollectionId = 0
+          $(date_filter fe.modifiedDate)
         ORDER BY fe.externalReferenceCode, fv.version;
     "
 
@@ -364,7 +377,8 @@ test_documents_and_media() {
             COUNT(*)        AS total_folders
         FROM DLFolder
         WHERE groupId        = __GROUPID__
-          AND ctCollectionId = 0;
+          AND ctCollectionId = 0
+          $(date_filter modifiedDate);
     "
 
     check "DLFolder – Identifiers" "
@@ -375,6 +389,7 @@ test_documents_and_media() {
         FROM DLFolder
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -386,6 +401,7 @@ test_documents_and_media() {
         FROM DLFolder
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -400,6 +416,7 @@ test_documents_and_media() {
               AND p.ctCollectionId = 0
         WHERE f.groupId        = __GROUPID__
           AND f.ctCollectionId = 0
+          $(date_filter f.modifiedDate)
         ORDER BY f.externalReferenceCode;
     "
 
@@ -426,6 +443,7 @@ test_documents_and_media() {
         FROM DLFolder
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 

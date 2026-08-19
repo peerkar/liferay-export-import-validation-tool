@@ -12,8 +12,8 @@
 #                                                   → Structure Templates (legacy)
 # =============================================================================
 
-test_template() {
-    section "TEMPLATE"
+test_templates() {
+    section "TEMPLATES"
 
     # =========================================================================
     # DDMTemplate

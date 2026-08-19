@@ -3,8 +3,8 @@
 # Tables: BlogsEntry, DLFileEntry (cover image)
 # =============================================================================
 
-test_blog() {
-    section "BLOG"
+test_blogs() {
+    section "BLOGS"
 
     # =========================================================================
     # BlogsEntry
@@ -16,7 +16,8 @@ test_blog() {
         FROM BlogsEntry
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
-            AND status = 0;
+            AND status = 0
+            $(date_filter modifiedDate);
     "
 
     check "BlogsEntry – Identifiers" "
@@ -28,6 +29,7 @@ test_blog() {
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
             AND status = 0
+            $(date_filter modifiedDate)
         ORDER BY urlTitle;
     "
 
@@ -43,6 +45,7 @@ test_blog() {
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
             AND status = 0
+            $(date_filter modifiedDate)
         ORDER BY urlTitle;
     "
 
@@ -57,6 +60,7 @@ test_blog() {
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
             AND status = 0
+            $(date_filter modifiedDate)
         ORDER BY urlTitle;
     "
 
@@ -69,6 +73,7 @@ test_blog() {
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
             AND status = 0
+            $(date_filter modifiedDate)
         ORDER BY urlTitle;
     "
 
@@ -81,6 +86,7 @@ test_blog() {
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
             AND status = 0
+            $(date_filter modifiedDate)
         ORDER BY urlTitle;
     "
 
@@ -96,6 +102,7 @@ test_blog() {
         WHERE be.groupId = __GROUPID__
             AND be.ctCollectionId = 0
             AND be.status = 0
+            $(date_filter be.modifiedDate)
         ORDER BY be.urlTitle;
     "
 
@@ -111,6 +118,7 @@ test_blog() {
         WHERE be.groupId = __GROUPID__
             AND be.ctCollectionId = 0
             AND be.status = 0
+            $(date_filter be.modifiedDate)
         ORDER BY be.urlTitle;
     "
 
@@ -124,6 +132,7 @@ test_blog() {
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
             AND status = 0
+            $(date_filter modifiedDate)
         ORDER BY urlTitle;
     "
 }

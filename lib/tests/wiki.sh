@@ -15,7 +15,8 @@ test_wiki() {
             COUNT(*)    AS total
         FROM WikiNode
         WHERE groupId = __GROUPID__
-            AND ctCollectionId = 0;
+            AND ctCollectionId = 0
+            $(date_filter modifiedDate);
     "
 
     check "WikiNode – Identifiers" "
@@ -26,6 +27,7 @@ test_wiki() {
         FROM WikiNode
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         ORDER BY name;
     "
 
@@ -36,6 +38,7 @@ test_wiki() {
         FROM WikiNode
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         ORDER BY name;
     "
 
@@ -46,6 +49,7 @@ test_wiki() {
         FROM WikiNode
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         ORDER BY name;
     "
 
@@ -58,6 +62,7 @@ test_wiki() {
         FROM WikiNode
         WHERE groupId = __GROUPID__
             AND ctCollectionId = 0
+            $(date_filter modifiedDate)
         ORDER BY name;
     "
 
@@ -77,6 +82,7 @@ test_wiki() {
         WHERE p.status = 0
           AND n.groupId = __GROUPID__
           AND p.ctCollectionId = 0
+          $(date_filter p.modifiedDate)
         GROUP BY n.name
         ORDER BY n.name;
     "
@@ -92,6 +98,7 @@ test_wiki() {
         WHERE p.head = 1
           AND n.groupId = __GROUPID__
           AND p.ctCollectionId = 0
+          $(date_filter p.modifiedDate)
         ORDER BY n.name, p.title;
     "
 
@@ -110,6 +117,7 @@ test_wiki() {
         WHERE p.head = 1
           AND n.groupId = __GROUPID__
           AND p.ctCollectionId = 0
+          $(date_filter p.modifiedDate)
         ORDER BY n.name, p.title;
     "
 
@@ -125,6 +133,7 @@ test_wiki() {
         WHERE p.head = 1
           AND n.groupId = __GROUPID__
           AND p.ctCollectionId = 0
+          $(date_filter p.modifiedDate)
         ORDER BY n.name, p.title;
     "
 
@@ -140,6 +149,7 @@ test_wiki() {
         WHERE p.head = 1
           AND n.groupId = __GROUPID__
           AND p.ctCollectionId = 0
+          $(date_filter p.modifiedDate)
         ORDER BY n.name, p.title;
     "
 
@@ -154,6 +164,7 @@ test_wiki() {
              AND n.ctCollectionId = 0
         WHERE n.groupId = __GROUPID__
           AND p.ctCollectionId = 0
+          $(date_filter p.modifiedDate)
         GROUP BY n.name, p.title
         ORDER BY n.name, p.title;
     "
@@ -176,6 +187,7 @@ test_wiki() {
               AND dlfe.ctCollectionId = 0
         WHERE n.groupId = __GROUPID__
           AND n.ctCollectionId = 0
+          $(date_filter n.modifiedDate)
         GROUP BY n.name
         ORDER BY n.name;
     "

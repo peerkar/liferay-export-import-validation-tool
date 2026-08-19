@@ -9,8 +9,8 @@
 #   1 = Dynamic  (criteria-based)
 # =============================================================================
 
-test_collection() {
-    section "COLLECTION"
+test_collections() {
+    section "COLLECTIONS"
 
     # =========================================================================
     # AssetListEntry

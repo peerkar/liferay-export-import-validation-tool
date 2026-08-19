@@ -17,8 +17,8 @@
 #   WikiPage           →  wiki page friendly URLs
 # =============================================================================
 
-test_friendly_url() {
-    section "FRIENDLY URL"
+test_friendly_urls() {
+    section "FRIENDLY URLS"
 
     # =========================================================================
     # FriendlyURLEntry

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # =============================================================================
 # Liferay Export/Import – Validation Script  (entry point)
 # =============================================================================
@@ -30,36 +30,53 @@
 #
 # OUTPUT:
 #   Screen : summary only
-#   Log    : full check output written to logs/compare_<timestamp>.log
+#   Log    : full check output. Defaults to a /tmp file; lfimex routes it
+#            into results/<run_id>/. Override with LOG_FILE=/path/...
 #
 # SQL placeholders available in tests:
-#   __GROUPID__    → resolved groupId for the compared site
-#   __COMPANYID__  → resolved companyId for the compared company
+#   __GROUPID__              → resolved groupId for the compared site
+#   __COMPANYID__            → resolved companyId for the compared company
+#
+# Tests can also call `$(date_filter <column>)` inside their SQL strings to
+# add an "AND <column> BETWEEN '<from>' AND '<to>'" clause when the user
+# supplied --from-date / --to-date. With no dates, it expands to empty.
 #
 # CONFIG:
-#   Copy config/db.conf.example → config/db.conf and fill in credentials.
-#   db.conf is gitignored and never committed.
+#   Copy config/config.sh.example → config/config.sh and fill in values.
+#   config.sh is gitignored and never committed.
 #
 # EXTENDING:
-#   Drop a new file  tests/<name>.sh  that defines  test_<name>().
+#   Drop a new file  lib/tests/<name>.sh  that defines  test_<name>().
 #   It is auto-discovered – no registration needed.
 #
 # =============================================================================
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TESTS_DIR="${TESTS_DIR:-$SCRIPT_DIR/tests}"
-CONFIG_FILE="${CONFIG_FILE:-$SCRIPT_DIR/config/db.conf}"
-LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
+# Source config.sh first so PROJECT_DIR (and any other shared settings) are
+# in place before we resolve TESTS_DIR / LOG_FILE. The CONFIG_FILE override
+# lets a caller (or test harness) point at a different config.
+CONFIG_FILE="${CONFIG_FILE:-$(cd "$(dirname "$0")/.." && pwd)/config/config.sh}"
+if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "[ERROR] Config file not found: $CONFIG_FILE"
+    echo "        Copy config/config.sh.example to config/config.sh and fill in your values."
+    exit 1
+fi
+# shellcheck source=/dev/null
+source "$CONFIG_FILE"
+
+TESTS_DIR="${TESTS_DIR:-$PROJECT_DIR/lib/tests}"
 NO_COLOR="${NO_COLOR:-}"
 VERBOSE="${VERBOSE:-}"        # Can also be set via --verbose flag
 
 # -----------------------------------------------------------------------------
 # LOG FILE SETUP
 # -----------------------------------------------------------------------------
-mkdir -p "$LOG_DIR"
-LOG_FILE="$LOG_DIR/compare_$(date '+%Y%m%d_%H%M%S').log"
+# When invoked from lfimex, step_validate.sh sets LOG_FILE to a path inside
+# the run's results/ directory. Standalone callers get a /tmp file so the
+# tool never litters the project root with a logs/ directory.
+LOG_FILE="${LOG_FILE:-$(mktemp -t lfimex-compare-XXXXXX.log)}"
+mkdir -p "$(dirname "$LOG_FILE")"
 
 _log()  { printf '%s\n' "$*" >> "$LOG_FILE"; }
 
@@ -69,18 +86,7 @@ _log()  { printf '%s\n' "$*" >> "$LOG_FILE"; }
 declare -a CHECK_LOG=()
 CURRENT_TEST=""
 
-# -----------------------------------------------------------------------------
-# LOAD CREDENTIALS
-# -----------------------------------------------------------------------------
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "[ERROR] Config file not found: $CONFIG_FILE"
-    echo "        Copy config/db.conf.example to config/db.conf and fill in your credentials."
-    exit 1
-fi
-# shellcheck source=/dev/null
-source "$CONFIG_FILE"
-
-# Expected variables after sourcing db.conf:
+# Expected variables after sourcing config.sh:
 #   SRC_DB_HOST  SRC_DB_PORT  SRC_DB_NAME  SRC_DB_USER  SRC_DB_PASS
 #   TGT_DB_HOST  TGT_DB_PORT  TGT_DB_NAME  TGT_DB_USER  TGT_DB_PASS
 
@@ -97,6 +103,9 @@ SRC_SITE=""
 TGT_COMPANY=""
 TGT_SITE=""
 TESTS_ARG=()
+FROM_DATE=""
+TO_DATE=""
+IGNORE_ARG=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -105,6 +114,9 @@ while [[ $# -gt 0 ]]; do
         --target-company-web-id) TGT_COMPANY="$2";                        shift 2 ;;
         --target-site)           TGT_SITE="$2";                           shift 2 ;;
         --tests)        IFS=',' read -ra TESTS_ARG <<< "$2";   shift 2 ;;
+        --from-date)             FROM_DATE="$2";                          shift 2 ;;
+        --to-date)               TO_DATE="$2";                            shift 2 ;;
+        --ignore-tests) IFS=',' read -ra IGNORE_ARG <<< "$2"; shift 2 ;;
         *) echo "Unknown argument: $1"; exit 1 ;;
     esac
 done
@@ -112,9 +124,55 @@ done
 if [[ -z "$SRC_SITE" || -z "$TGT_SITE" ]]; then
     echo "Usage: ./compare.sh [--source-company-web-id <webId>] --source-site <site_key>"
     echo "                       [--target-company-web-id <webId>] --target-site <site_key>"
-    echo "                       [--tests m1,m2,...] [--verbose]"
+    echo "                       [--tests m1,m2,...] [--from-date YYYY-MM-DD]"
+    echo "                       [--to-date YYYY-MM-DD] [--ignore-tests <pattern,...>] [--verbose]"
     exit 1
 fi
+
+# IGNORED_PATTERNS comes solely from --ignore-tests. Each pattern is
+# "<test>:<label>" matched as a substring against the same string at check
+# time; "*:<label>" matches the label in any test.
+IGNORED_PATTERNS=("${IGNORE_ARG[@]}")
+
+# When --from-date / --to-date are provided, set SQL fragments that tests
+# splice into their WHERE clause via __DATE_FILTER_MODIFIED__ and
+# __DATE_FILTER_CREATED__. When dates are absent, both placeholders expand
+# to an empty string so the same tests still match every row.
+# Helper for tests. Returns an SQL fragment that restricts the given column to
+# the requested range, or an empty string when no --from-date/--to-date were
+# provided. Usage inside a test SQL string:
+#     WHERE groupId = __GROUPID__
+#       $(date_filter modifiedDate)
+# or, for joined queries with table aliases:
+#       $(date_filter fe.modifiedDate)
+date_filter() {
+    if [[ -z "$FROM_DATE" || -z "$TO_DATE" ]]; then return; fi
+    local column="$1"
+    echo "AND $column BETWEEN '${FROM_DATE} 00:00:00' AND '${TO_DATE} 23:59:59'"
+}
+
+# True if the current check's label matches any ignore pattern. Patterns look
+# like "<test>:<label>"; "*:<label>" matches in any test; "<label>" alone is
+# treated as "*:<label>". Matching is substring on the label so a pattern can
+# cover a related family (e.g. "DLFileEntryType – ").
+_is_ignored() {
+    local label="$1" pat test_part label_part
+    for pat in "${IGNORED_PATTERNS[@]}"; do
+        if [[ "$pat" == *:* ]]; then
+            test_part="${pat%%:*}"
+            label_part="${pat#*:}"
+        else
+            test_part="*"
+            label_part="$pat"
+        fi
+        if [[ "$test_part" == "*" || "$test_part" == "$CURRENT_TEST" ]]; then
+            if [[ "$label" == *"$label_part"* ]]; then
+                return 0
+            fi
+        fi
+    done
+    return 1
+}
 
 # -----------------------------------------------------------------------------
 # DB HELPERS
@@ -216,10 +274,20 @@ _norm_for_diff() {
     sed 's/[[:space:]]*|/|/g'
 }
 
-# check "Label" "SQL with __GROUPID__ and/or __COMPANYID__ placeholders"
+# check "Label" "SQL with __GROUPID__ / __COMPANYID__ placeholders"
 # Substitutes both SRC/TGT values, runs against both DBs, diffs, logs result.
+# Tests interpolate $(date_filter <column>) inside the SQL when they want to
+# restrict to the --from-date / --to-date range.
 check() {
     local label="$1" sql_tpl="$2"
+
+    if _is_ignored "$label"; then
+        _log ""
+        _log "  ⊘ SKIP   $label"
+        CHECK_LOG+=("${CURRENT_TEST}|IGNORED|${label}")
+        return
+    fi
+
     local src_sql tgt_sql
     src_sql="${sql_tpl//__GROUPID__/$SRC_GROUP_ID}"
     src_sql="${src_sql//__COMPANYID__/$SRC_COMPANY_ID}"
@@ -300,8 +368,12 @@ warn() {
 # -----------------------------------------------------------------------------
 # SUMMARY  (screen only)
 # -----------------------------------------------------------------------------
+SUMMARY_PASSED=0
+SUMMARY_FAILED=0
+SUMMARY_IGNORED=0
+
 print_summary() {
-    local passed=0 failed=0 prev_test=""
+    local passed=0 failed=0 ignored=0 prev_test=""
 
     echo ""
     echo ""
@@ -326,6 +398,9 @@ print_summary() {
         elif [[ "$status" == "FAIL" ]]; then
             _color "$CRED";    printf '    ✗  %s\n' "$label"; _color "$C0"
             ((failed++)) || true
+        elif [[ "$status" == "IGNORED" ]]; then
+            _color "$CGRAY";   printf '    ⊘  %s  (ignored)\n' "$label"; _color "$C0"
+            ((ignored++)) || true
         else
             _color "$CYELLOW"; printf '    ✖  %s\n' "$label"; _color "$C0"
             ((failed++)) || true
@@ -336,11 +411,23 @@ print_summary() {
     echo ""
     _color "$CGRAY"; printf '  '; printf '─%.0s' {1..62}; echo ""; _color "$C0"
     if [[ $failed -eq 0 ]]; then
-        _color "$CGREEN"; printf '  ✓ All %d checks passed.\n' "$total"; _color "$C0"
+        if [[ $ignored -gt 0 ]]; then
+            _color "$CGREEN"; printf '  ✓ All %d checks passed (%d ignored).\n' "$total" "$ignored"; _color "$C0"
+        else
+            _color "$CGREEN"; printf '  ✓ All %d checks passed.\n' "$total"; _color "$C0"
+        fi
     else
-        _color "$CRED";   printf '  ✗ %d of %d checks failed.\n' "$failed" "$total"; _color "$C0"
+        if [[ $ignored -gt 0 ]]; then
+            _color "$CRED";   printf '  ✗ %d of %d checks failed (%d ignored).\n' "$failed" "$total" "$ignored"; _color "$C0"
+        else
+            _color "$CRED";   printf '  ✗ %d of %d checks failed.\n' "$failed" "$total"; _color "$C0"
+        fi
     fi
     echo ""
+
+    SUMMARY_PASSED=$passed
+    SUMMARY_FAILED=$failed
+    SUMMARY_IGNORED=$ignored
 }
 
 # -----------------------------------------------------------------------------
@@ -419,6 +506,10 @@ main() {
     printf '═%.0s' {1..65}; echo ""
     _color "$C0"
     echo ""
+
+    if [[ ${SUMMARY_FAILED:-0} -gt 0 ]]; then
+        exit 1
+    fi
 }
 
 main

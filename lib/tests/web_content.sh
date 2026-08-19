@@ -116,7 +116,8 @@ test_web_content() {
             COUNT(*)        AS total
         FROM JournalArticle
         WHERE groupId        = __GROUPID__
-          AND ctCollectionId = 0;
+          AND ctCollectionId = 0
+          $(date_filter modifiedDate);
     "
 
     check "JournalArticle – Count of latest versions by status" "
@@ -126,6 +127,7 @@ test_web_content() {
         FROM JournalArticle ja
         WHERE ja.groupId        = __GROUPID__
           AND ja.ctCollectionId = 0
+          $(date_filter ja.modifiedDate)
           AND ja.version        = (
               SELECT MAX(ja2.version)
               FROM JournalArticle ja2
@@ -145,6 +147,7 @@ test_web_content() {
         FROM JournalArticle ja
         WHERE ja.groupId        = __GROUPID__
           AND ja.ctCollectionId = 0
+          $(date_filter ja.modifiedDate)
           AND ja.version        = (
               SELECT MAX(ja2.version)
               FROM JournalArticle ja2
@@ -176,6 +179,7 @@ test_web_content() {
               AND jf.ctCollectionId = 0
         WHERE ja.groupId        = __GROUPID__
           AND ja.ctCollectionId = 0
+          $(date_filter ja.modifiedDate)
           AND ja.version        = (
               SELECT MAX(ja2.version)
               FROM JournalArticle ja2
@@ -194,6 +198,7 @@ test_web_content() {
         FROM JournalArticle
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         GROUP BY externalReferenceCode, articleId
         ORDER BY externalReferenceCode;
     "
@@ -209,6 +214,7 @@ test_web_content() {
         FROM JournalArticle ja
         WHERE ja.groupId        = __GROUPID__
           AND ja.ctCollectionId = 0
+          $(date_filter ja.modifiedDate)
           AND ja.version        = (
               SELECT MAX(ja2.version)
               FROM JournalArticle ja2
@@ -231,6 +237,7 @@ test_web_content() {
           ON ja.id_            = jal.articlePK
          AND ja.ctCollectionId = 0
         WHERE ja.groupId       = __GROUPID__
+          $(date_filter ja.modifiedDate)
           AND ja.version       = (
               SELECT MAX(ja2.version)
               FROM JournalArticle ja2
@@ -250,6 +257,7 @@ test_web_content() {
           ON ja.id_            = jal.articlePK
          AND ja.ctCollectionId = 0
         WHERE ja.groupId       = __GROUPID__
+          $(date_filter ja.modifiedDate)
           AND ja.version       = (
               SELECT MAX(ja2.version)
               FROM JournalArticle ja2
@@ -272,6 +280,7 @@ test_web_content() {
           ON ja.id_            = jal.articlePK
          AND ja.ctCollectionId = 0
         WHERE ja.groupId       = __GROUPID__
+          $(date_filter ja.modifiedDate)
           AND ja.version       = (
               SELECT MAX(ja2.version)
               FROM JournalArticle ja2
@@ -298,6 +307,7 @@ test_web_content() {
          AND df.ctCollectionId  = 0
         WHERE ja.groupId        = __GROUPID__
           AND ja.ctCollectionId = 0
+          $(date_filter ja.modifiedDate)
           AND ja.version        = (
               SELECT MAX(ja2.version)
               FROM JournalArticle ja2
@@ -326,6 +336,7 @@ test_web_content() {
          AND dfa.ctCollectionId = 0
         WHERE ja.groupId        = __GROUPID__
           AND ja.ctCollectionId = 0
+          $(date_filter ja.modifiedDate)
           AND ja.version        = (
               SELECT MAX(ja2.version)
               FROM JournalArticle ja2
@@ -368,7 +379,8 @@ test_web_content() {
             COUNT(*)        AS total_folders
         FROM JournalFolder
         WHERE groupId        = __GROUPID__
-          AND ctCollectionId = 0;
+          AND ctCollectionId = 0
+          $(date_filter modifiedDate);
     "
 
     check "JournalFolder – Identifiers" "
@@ -379,6 +391,7 @@ test_web_content() {
         FROM JournalFolder
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -390,6 +403,7 @@ test_web_content() {
         FROM JournalFolder
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 
@@ -404,6 +418,7 @@ test_web_content() {
               AND p.ctCollectionId = 0
         WHERE f.groupId        = __GROUPID__
           AND f.ctCollectionId = 0
+          $(date_filter f.modifiedDate)
         ORDER BY f.externalReferenceCode;
     "
 
@@ -418,6 +433,7 @@ test_web_content() {
               AND jf.ctCollectionId = 0
         WHERE ja.groupId        = __GROUPID__
           AND ja.ctCollectionId = 0
+          $(date_filter ja.modifiedDate)
           AND ja.version        = (
               SELECT MAX(ja2.version)
               FROM JournalArticle ja2
@@ -437,6 +453,7 @@ test_web_content() {
         FROM JournalFolder
         WHERE groupId        = __GROUPID__
           AND ctCollectionId = 0
+          $(date_filter modifiedDate)
         ORDER BY externalReferenceCode;
     "
 }

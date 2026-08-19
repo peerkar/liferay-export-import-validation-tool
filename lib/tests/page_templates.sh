@@ -1,5 +1,5 @@
 # =============================================================================
-# Test: PAGES
+# Test: PAGE TEMPLATES
 # Tables: Layout, LayoutPageTemplateEntry, LayoutPageTemplateCollection,
 #         LayoutPageTemplateStructure, LayoutPageTemplateStructureRel,
 #         LayoutUtilityPageEntry, ClassName_
@@ -17,7 +17,7 @@
 #
 # =============================================================================
 
-test_page() {
+test_page_templates() {
     section "PAGE"
 
 
